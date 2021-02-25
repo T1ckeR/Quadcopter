@@ -37,26 +37,28 @@ void loop() {
   //client.setTimeout(0);
   if (client) {
     while (client.connected()) {
-      if(Serial.available()){
-        cmd = Serial.readStringUntil('\n');
-        Serial.println(cmd);
-        if (cmd == "r") {
-          client.stop();
-          break;
-        }
-      }
       while (client.available()>0) {
         data = client.readStringUntil('/');
         Serial.println(data);
-        throttle = getValue(data, ',', 0);
-        yaw = getValue(data, ',', 1);
-        pitch = getValue(data, ',', 2);
-        roll = getValue(data, ',', 3);
-        Serial.println(throttle);
+        if (data == "bye" or data == "hey") {
+          if (data == "hey") {
+            Serial.println("Client connected!");
+          } else {
+            client.stop();
+            Serial.println("Client requested disconnect...");
+          }
+        } else {
+          throttle = getValue(data, ',', 0);
+          yaw = getValue(data, ',', 1);
+          pitch = getValue(data, ',', 2);
+          roll = getValue(data, ',', 3);
+          Serial.println(throttle);
+        }
       }
+      delayMicroseconds(100);
     }
     client.stop();
-    Serial.println("Client disconnected");
+    Serial.println("Client has been disconnected!");
   }
   delay(10);
 }
