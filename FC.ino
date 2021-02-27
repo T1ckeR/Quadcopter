@@ -1,5 +1,6 @@
 #include <SPI.h>
 #include <WiFiNINA.h>
+#include <Servo.h>
 
 // recieving data order: throttle,yaw,pitch,roll
 
@@ -14,10 +15,16 @@ String yaw;
 String pitch;
 String roll;
 
+int savedThrottle;
+double tempThrottle;
+
+Servo firstMotor;
+
 WiFiServer wifiServer(80);
 
 void setup() {
-  Serial.begin(115200);
+  firstMotor.attach(7);
+  Serial.begin(9600);
   delay(1000);
   Serial.println("Starting network...");
   WiFi.config(IPAddress(10, 0, 0, 1));
@@ -38,8 +45,10 @@ void loop() {
   if (client) {
     while (client.connected()) {
       while (client.available()>0) {
+        Serial.println("Saved:");
+        Serial.println(savedThrottle);
         data = client.readStringUntil('/');
-        Serial.println(data);
+        //Serial.println(data);
         if (data == "bye" or data == "hey") {
           if (data == "hey") {
             Serial.println("Client connected!");
@@ -52,11 +61,19 @@ void loop() {
           yaw = getValue(data, ',', 1);
           pitch = getValue(data, ',', 2);
           roll = getValue(data, ',', 3);
+
+          tempThrottle = throttle.toDouble();
+          if (tempThrottle > 0.975) {
+            tempThrottle = 1.0;
+          }
+          savedThrottle = (tempThrottle * 2000);
           Serial.println(throttle);
         }
       }
-      delayMicroseconds(100);
+      delayMicroseconds(125);
+      firstMotor.writeMicroseconds(savedThrottle);
     }
+    firstMotor.writeMicroseconds(0);
     client.stop();
     Serial.println("Client has been disconnected!");
   }
